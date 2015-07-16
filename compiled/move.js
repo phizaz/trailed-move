@@ -1,63 +1,67 @@
 #!/usr/bin/env node
+
+// dependencies
 'use strict';
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
+var fs = require('fs');
+var path = require('path');
+// class prototype
+
+var Path = (function () {
+  function Path(pathstring) {
+    _classCallCheck(this, Path);
+
+    this.apply(pathstring);
+  }
+
+  _createClass(Path, [{
+    key: 'apply',
+    value: function apply(pathstring) {
+      pathstring = Path.normalize(pathstring);
+      this.full = pathstring;
+      this.dir = path.dirname(pathstring);
+      this.basename = path.basename(pathstring);
+    }
+  }, {
+    key: 'isDir',
+    value: function isDir() {
+      if (!fs.existsSync(this.full)) {
+        return false;
+      }
+      return fs.statSync(this.full).isDirectory();
+    }
+  }, {
+    key: 'append',
+    value: function append(pathstring) {
+      this.apply(path.join(this.full, pathstring));
+    }
+  }], [{
+    key: 'normalize',
+    value: function normalize(pathstring) {
+      pathstring = path.normalize(pathstring);
+      if (pathstring != './' && pathstring[pathstring.length - 1] === '/') {
+        return pathstring.substring(0, pathstring.length - 1);
+      }
+      return pathstring;
+    }
+  }]);
+
+  return Path;
+})();
+
+// the program starts here
+// using IIFE here because I want to be able to terminate the program during runtime by executing "return" statement
 (function () {
-  var fs = require('fs');
-  var path = require('path');
-
   var args = process.argv.slice(2);
-
   if (args.length < 2) {
     console.error('please enter source, dest paths');
     return;
   }
-
-  var Path = (function () {
-    function Path(pathstring) {
-      _classCallCheck(this, Path);
-
-      this.apply(pathstring);
-    }
-
-    _createClass(Path, [{
-      key: 'apply',
-      value: function apply(pathstring) {
-        pathstring = Path.normalize(pathstring);
-        this.full = pathstring;
-        this.dir = path.dirname(pathstring);
-        this.basename = path.basename(pathstring);
-      }
-    }, {
-      key: 'isDir',
-      value: function isDir() {
-        if (!fs.existsSync(this.full)) {
-          return false;
-        }
-        return fs.statSync(this.full).isDirectory();
-      }
-    }, {
-      key: 'append',
-      value: function append(pathstring) {
-        this.apply(path.join(this.full, pathstring));
-      }
-    }], [{
-      key: 'normalize',
-      value: function normalize(pathstring) {
-        pathstring = path.normalize(pathstring);
-        if (pathstring[pathstring.length - 1] === '/') {
-          return pathstring.substring(0, pathstring.length - 1);
-        }
-        return pathstring;
-      }
-    }]);
-
-    return Path;
-  })();
-
+  // source files are everything in the arguments but the last one
   var sourcePaths = args.slice(0, -1);
   var sources = [];
   var _iteratorNormalCompletion = true;
@@ -85,8 +89,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     }
   }
 
+  // dest is the last in the argument list
   var dest = new Path(args[args.length - 1]);
-
   var _iteratorNormalCompletion2 = true;
   var _didIteratorError2 = false;
   var _iteratorError2 = undefined;
@@ -98,7 +102,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       console.log('moving :', source.full);
       console.log('to: ', dest.full);
       console.log('by leaving a symbolic link...');
-      // move it
+      // move it, from source to dest
+      // declaaring thisDest because each dest is a little but different. (by .append)
       var thisDest = new Path(dest.full);
       if (thisDest.isDir()) {
         thisDest.append(source.basename);
@@ -122,5 +127,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     }
   }
 
+  // the whole process is done
   console.log('done!');
 })();
