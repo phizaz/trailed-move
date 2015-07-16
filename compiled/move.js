@@ -26,6 +26,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     _createClass(Path, [{
       key: 'apply',
       value: function apply(pathstring) {
+        pathstring = Path.normalize(pathstring);
         this.full = pathstring;
         this.dir = path.dirname(pathstring);
         this.basename = path.basename(pathstring);
@@ -43,25 +44,83 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
       value: function append(pathstring) {
         this.apply(path.join(this.full, pathstring));
       }
+    }], [{
+      key: 'normalize',
+      value: function normalize(pathstring) {
+        pathstring = path.normalize(pathstring);
+        if (pathstring[pathstring.length - 1] === '/') {
+          return pathstring.substring(0, pathstring.length - 1);
+        }
+        return pathstring;
+      }
     }]);
 
     return Path;
   })();
 
-  var source = new Path(args[0]);
-  var dest = new Path(args[1]);
+  var sourcePaths = args.slice(0, -1);
+  var sources = [];
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
 
-  console.log('moving :', source.full);
-  console.log('to: ', dest.full);
-  console.log('by leaving a symbolic link...');
+  try {
+    for (var _iterator = sourcePaths[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var each = _step.value;
 
-  // move it
-  if (dest.isDir()) {
-    dest.append(source.basename);
+      sources.push(new Path(each));
+    }
+  } catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion && _iterator['return']) {
+        _iterator['return']();
+      }
+    } finally {
+      if (_didIteratorError) {
+        throw _iteratorError;
+      }
+    }
   }
-  fs.renameSync(source.full, dest.full);
-  // create a symlink
-  fs.symlinkSync(dest.full, source.full);
+
+  var dest = new Path(args[args.length - 1]);
+
+  var _iteratorNormalCompletion2 = true;
+  var _didIteratorError2 = false;
+  var _iteratorError2 = undefined;
+
+  try {
+    for (var _iterator2 = sources[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+      var source = _step2.value;
+
+      console.log('moving :', source.full);
+      console.log('to: ', dest.full);
+      console.log('by leaving a symbolic link...');
+      // move it
+      var thisDest = new Path(dest.full);
+      if (thisDest.isDir()) {
+        thisDest.append(source.basename);
+      }
+      fs.renameSync(source.full, thisDest.full);
+      // create a symlink
+      fs.symlinkSync(thisDest.full, source.full);
+    }
+  } catch (err) {
+    _didIteratorError2 = true;
+    _iteratorError2 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion2 && _iterator2['return']) {
+        _iterator2['return']();
+      }
+    } finally {
+      if (_didIteratorError2) {
+        throw _iteratorError2;
+      }
+    }
+  }
 
   console.log('done!');
 })();
